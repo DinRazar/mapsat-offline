@@ -9,6 +9,11 @@ body {
     margin-top: 50px;
 }
 
+#dataDropdown:hover {
+    background-color: #f0f0f0;
+    /* Светло-серый цвет при наведении */
+}
+
 #dataDropdown {
     width: 300px;
     padding: 10px;
