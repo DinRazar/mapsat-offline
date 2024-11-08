@@ -16,11 +16,12 @@
  map.attributionControl.setPrefix(false);
 
 
- let lastMarker;
- let markerFromDB;
- let geodesic;
- let thirdMarker; // Переменная для третьего маркера
- let thirdGeodesic; // Переменная для геодезической линии между маркерами
+ 
+ let lastMarker;     // переменная для маркера, создающегося по клику
+ let markerFromDB;   // переменная для маркера из базы данных
+ let geodesic;       // переменная для геодезической линии между lastMarker и markerFromDB
+ let thirdMarker;    // переменная для маркера дрона
+ let thirdGeodesic;  // переменная для геодезической линии меджду lastmarker и thirdMarker
 
  var info = L.control();
  info.onAdd = function(map) {
