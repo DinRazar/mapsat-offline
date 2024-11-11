@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
- 
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <link rel="stylesheet" href="./style.css">
 </head>
- 
+
 <body>
     <select id="dataDropdown"></select>
     <button id="addPointButton" disabled>Расчёт точки</button>
@@ -20,6 +20,7 @@
     <div id="map"></div>
     <button onclick="calculatePolarization()">Посчитать поляризацию</button>
     <button onclick="calculateElevationAngle()">Посчитать угол места антенны</button>
+    <button onclick="calculateConvectorAngle()">Посчитать угол поворота конвектора</button>
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/leaflet.geodesic"></script>
     <script>
@@ -28,44 +29,44 @@
             maxZoom: 19,
         }).addTo(map);
         map.attributionControl.setPrefix(false);
- 
-        let lastMarker;     // переменная для маркера, создающегося по клику
-        let markerFromDB;   // переменная для маркера из базы данных
-        let geodesic;       // переменная для геодезической линии между lastMarker и markerFromDB
-        let thirdMarker;    // переменная для маркера дрона
-        let thirdGeodesic;  // переменная для геодезической линии меджду lastmarker и thirdMarker
- 
+
+        let lastMarker; // переменная для маркера, создающегося по клику
+        let markerFromDB; // переменная для маркера из базы данных
+        let geodesic; // переменная для геодезической линии между lastMarker и markerFromDB
+        let thirdMarker; // переменная для маркера дрона
+        let thirdGeodesic; // переменная для геодезической линии меджду lastmarker и thirdMarker
+
         var info = L.control();
         info.onAdd = function(map) {
             this._div = L.DomUtil.create('div', 'info');
             return this._div;
         };
         info.addTo(map);
- 
+
         info.update = function(stats) {
             this._div.innerHTML = '<h4>Данные</h4>' +
                 '<b>Истинный азимут:</b> ' + (stats.trueAzimuth || 'N/A') + '°<br/>' +
                 '<b>Магнитный азимут:</b> ' + (stats.magneticAzimuth || 'N/A') + '°';
         };
- 
+
         map.on('click', function(e) {
             const lat = e.latlng.lat;
             const lng = e.latlng.lng;
- 
+
             if (lastMarker) {
                 map.removeLayer(lastMarker);
             }
- 
+
             lastMarker = L.marker([lat, lng], {
                 draggable: true
             }).addTo(map);
             lastMarker.on('drag', updateGeodesic);
             updateGeodesic();
- 
+
             document.getElementById('addPointButton').disabled = false;
             // console.log(`широта ${lat} долгота ${lng}`);
         });
- 
+
         fetch('http://localhost:3000/data')
             .then(response => response.json())
             .then(data => {
@@ -78,27 +79,27 @@
                     option.dataset.longitude = item.longitude;
                     dropdown.appendChild(option);
                 });
- 
+
                 dropdown.addEventListener('change', (event) => {
                     const selectedOption = event.target.selectedOptions[0];
                     const latitude = selectedOption.dataset.latitude;
                     const longitude = selectedOption.dataset.longitude;
- 
+
                     if (markerFromDB) {
                         map.removeLayer(markerFromDB);
                     }
- 
+
                     markerFromDB = L.marker([latitude, longitude]).addTo(map).bindPopup(selectedOption.textContent);
                     updateGeodesic();
                 });
             })
             .catch(error => console.error('Ошибка загрузки данных:', error));
- 
+
         function updateGeodesic() {
             if (geodesic) {
                 map.removeLayer(geodesic);
             }
- 
+
             if (lastMarker && markerFromDB) {
                 geodesic = L.geodesic([lastMarker.getLatLng(), markerFromDB.getLatLng()], {
                     weight: 3,
@@ -106,23 +107,23 @@
                     color: 'blue',
                     steps: 50
                 }).addTo(map);
- 
+
                 const lat1 = lastMarker.getLatLng().lat;
                 const lon1 = lastMarker.getLatLng().lng;
                 const lat2 = markerFromDB.getLatLng().lat;
                 const lon2 = markerFromDB.getLatLng().lng;
- 
+
                 const trueAzimuth = calculateTrueAzimuth(lat1, lon1, lat2, lon2);
                 const magneticDeclination = 12;
                 const magneticAzimuth = calculateMagneticAzimuth(trueAzimuth, magneticDeclination);
- 
+
                 info.update({
                     totalDistance: geodesic.statistics.totalDistance,
                     trueAzimuth: trueAzimuth.toFixed(2),
                     magneticAzimuth: magneticAzimuth.toFixed(2)
                 });
             }
- 
+
             if (thirdMarker) {
                 if (thirdGeodesic) {
                     map.removeLayer(thirdGeodesic);
@@ -135,28 +136,28 @@
                 }).addTo(map);
             }
         }
- 
+
         function calculateTrueAzimuth(lat1, lon1, lat2, lon2) {
             const toRadians = (degrees) => degrees * (Math.PI / 180);
             const toDegrees = (radians) => radians * (180 / Math.PI);
- 
+
             const deltaLon = toRadians(lon2 - lon1);
             lat1 = toRadians(lat1);
             lat2 = toRadians(lat2);
- 
+
             const y = Math.sin(deltaLon) * Math.cos(lat2);
             const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(deltaLon);
             const azimuth = Math.atan2(y, x);
- 
+
             return (toDegrees(azimuth) + 360) % 360;
         }
- 
+
         function calculateMagneticAzimuth(trueAzimuth, magneticDeclination) {
             return (trueAzimuth + magneticDeclination + 360) % 360;
         }
 
-                // Создание иконки для третьего маркера
-                const thirdMarkerIcon = L.icon({
+        // Создание иконки для третьего маркера
+        const thirdMarkerIcon = L.icon({
             iconUrl: 'data/dron.png',
             iconSize: [25, 25],
             iconAnchor: [12.5, 12.5],
@@ -219,21 +220,22 @@
             const visibilityDistance = calculateVisibilityDistance(antennaHeight, height);
             console.log(`Высота дрона: ${height} м`);
             console.log(`Расстояние прямой видимости: ${visibilityDistance.toFixed(2)} км`);
+            alert(`Расстояние прямой видимости: ${visibilityDistance.toFixed(2)} км`);
         });
 
         function calculateVisibilityDistance(antennaHeight, transmitterHeight) {
             return 3.57 * (Math.sqrt(antennaHeight) + Math.sqrt(transmitterHeight));
         };
- 
+
         function calculatePolarization() {
             if (lastMarker && markerFromDB) {
                 const lat1 = lastMarker.getLatLng().lat;
                 const lon1 = lastMarker.getLatLng().lng;
                 const satLat = markerFromDB.getLatLng().lat;
-               const satLon = markerFromDB.getLatLng().lng;
-                
+                const satLon = markerFromDB.getLatLng().lng;
+
                 const rad = Math.PI / 180;
-               const a = Math.sin((lon1 - satLon) / rad);
+                const a = Math.sin((lon1 - satLon) / rad);
                 const b = Math.tan(lat1 / rad);
                 const polarization = Math.atan2(a, b);
 
@@ -242,34 +244,52 @@
                 alert('Точки для расчета не выбраны.');
             }
         }
-        function calculateElevationAngle() {                                        // широта lat долгота lon
+
+        function calculateElevationAngle() { // широта lat долгота lon
             if (lastMarker && markerFromDB) {
-                const rad = Math.PI/180 ;
-                const lat1 = lastMarker.getLatLng().lat*rad;
-                const lon1 = lastMarker.getLatLng().lng*rad;
-                const satLon = markerFromDB.getLatLng().lng*rad;
-                
+                const rad = Math.PI / 180;
+                const lat1 = lastMarker.getLatLng().lat * rad;
+                const lon1 = lastMarker.getLatLng().lng * rad;
+                const satLon = markerFromDB.getLatLng().lng * rad;
 
-                console.log(`широта ${lat1} долгота ${lon1} спутник ${satLon}`);
-              
-                
-                const k = Math.cos((lon1 - satLon )) * Math.cos((lat1)) - 0.151;
-                const l = Math.pow(Math.cos((lon1 -satLon )), 2);
-                const n = Math.pow(Math.cos((lat1)), 2);
-                const p = 1 - l*n;
-                const m = Math.sqrt(p);
-                const s = Math.atan(k/ m);
-                const angle = s / rad;
+                // console.log(`широта ${lat1} долгота ${lon1} спутник ${satLon}`);
 
-               // const angle = Math.atan((Math.cos(lon1- satLon)*Math.cos(lat1) - 0.151)/ (Math.sqrt(1-Math.pow(Math.cos(lat1), 2)* Math.pow(Math.cos(lon1- satLon)))))
+                // Уровнение для подсчёта угла мест 
+
+                const angle = Math.atan((Math.cos((lon1 - satLon)) * Math.cos((lat1)) - 0.151) / Math.sqrt(1 - Math.pow(Math.cos((lon1 - satLon)), 2) * Math.pow(Math.cos((lat1)), 2))) / rad;
+
+                // const k = Math.cos((lon1 - satLon)) * Math.cos((lat1)) - 0.151;
+                // const l = Math.pow(Math.cos((lon1 - satLon)), 2);
+                // const n = Math.pow(Math.cos((lat1)), 2);
+                // const p = 1 - l * n;
+                // const m = Math.sqrt(p);
+                // const s = Math.atan(k / m);
+                // const angle = s / rad;
+                alert(`Угол места: ${angle.toFixed(2)} радиан`);
+            } else {
+                alert('Точки для расчета не выбраны.');
+            }
+
+        }
+
+        function calculateConvectorAngle() { // широта lat долгота lon
+            if (lastMarker && markerFromDB) {
+                const rad = Math.PI / 180;
+                const lat1 = lastMarker.getLatLng().lat * rad;
+                const lon1 = lastMarker.getLatLng().lng * rad;
+                const satLon = markerFromDB.getLatLng().lng * rad;
+
+
+
+                const angle = (Math.atan(Math.sin(lon1 - satLon) / Math.tan(lat1))) / rad;
 
                 alert(`Угол места: ${angle.toFixed(2)} радиан`);
             } else {
                 alert('Точки для расчета не выбраны.');
             }
-            
+
         }
     </script>
 </body>
- 
+
 </html>
