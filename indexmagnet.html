@@ -26,11 +26,19 @@
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/leaflet.geodesic"></script>
     <script>
-        const map = L.map('map').setView([55.755811, 37.617617], 11);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19,
-        }).addTo(map);
-        map.attributionControl.setPrefix(false);
+ var map = L.map('map').setView([55.755811, 37.617617], 11);
+
+map.attributionControl.setPrefix(false)
+
+// Добавление слоя тайлов
+L.tileLayer('data/Tiles/{z}/{x}/{y}.png', {
+
+    maxZoom: 13,
+    minZoom: 3,
+    tileSize: 256,
+    zoomOffset: 0,
+    attribution: 'Тестовая карта'
+}).addTo(map);
 
         let lastMarker; // переменная для маркера, создающегося по клику
         let markerFromDB; // переменная для маркера из базы данных
