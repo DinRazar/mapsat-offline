@@ -7,6 +7,22 @@
     <title>Dropdown and Leaflet Map</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <link rel="stylesheet" href="./style.css">
+    <script src="./geomag-master/dist/geomag.min.js"></script>
+    <link rel="stylesheet" href="./libs/dist/leaflet.css">
+    <link rel="stylesheet" href="./libs/dist/leaflet-measure.css">
+    <style>
+        #results {
+            margin-top: 10px;
+            font-weight: bold;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+        }
+
+        .result-item {
+            margin-right: 20px;
+        }
+    </style>
 </head>
 
 <body>
@@ -18,15 +34,30 @@
             <input type="number" id="heightInput" placeholder="Высота в метрах" disabled>
             <button id="confirmHeightButton" disabled>Подтвердить</button>
         </div>
-        <div id="results" style="margin-top: 10px; font-weight: bold;"></div>
+        <div id="results"></div> <!-- Контейнер для результатов -->
     </div>
     <div id="map"></div>
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/leaflet.geodesic"></script>
     <script>
-        const map = L.map('map').setView([55.755811, 37.617617], 11);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19,
+        // // онлайн версия
+        // const map = L.map('map').setView([55.755811, 37.617617], 11);
+        // L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        //     maxZoom: 19,
+        // }).addTo(map);
+
+        // map.attributionControl.setPrefix(false)
+
+        // оффлайн версия
+        var map = L.map('map').setView([55.755811, 37.617617], 11);
+        map.attributionControl.setPrefix(false)
+       // Добавление слоя тайлов
+        L.tileLayer('data/Tiles/{z}/{x}/{y}.png', {
+            maxZoom: 13,                                                                          
+            minZoom: 3,
+            tileSize: 256,                                                                            
+            zoomOffset: 0,
+            attribution: 'Тестовая карта'
         }).addTo(map);
 
         let lastMarker;
@@ -36,13 +67,13 @@
         let thirdGeodesic;
 
         var info = L.control();
-        info.onAdd = function(map) {
+        info.onAdd = function (map) {
             this._div = L.DomUtil.create('div', 'info');
             return this._div;
         };
         info.addTo(map);
 
-        map.on('click', function(e) {
+        map.on('click', function (e) {
             const lat = e.latlng.lat;
             const lng = e.latlng.lng;
 
@@ -111,7 +142,7 @@
             iconAnchor: [12.5, 12.5],
         });
 
-        document.getElementById('addPointButton').addEventListener('click', function() {
+        document.getElementById('addPointButton').addEventListener('click', function () {
             if (geodesic) {
                 const newPointLatLng = lastMarker.getLatLng();
 
@@ -152,7 +183,7 @@
             }
         });
 
-        document.getElementById('confirmHeightButton').addEventListener('click', function() {
+        document.getElementById('confirmHeightButton').addEventListener('click', function () {
             const height = parseFloat(document.getElementById('heightInput').value);
             const antennaHeight = 10;
             const visibilityDistance = calculateVisibilityDistance(antennaHeight, height);
@@ -169,6 +200,7 @@
                 const lon1 = lastMarker.getLatLng().lng;
                 const satLat = markerFromDB.getLatLng().lat;
                 const satLon = markerFromDB.getLatLng().lng;
+                const toDegrees = (radians) => radians * (180 / Math.PI);
 
                 // Поляризация
                 const rad = Math.PI / 180;
@@ -185,8 +217,26 @@
                 const convectorAngle = (Math.atan(Math.sin(lon1 * rad - satLon * rad) / Math.tan(lat1 * rad))) / rad;
                 const convectorAngleText = `Угол поворота конвектора: ${convectorAngle.toFixed(2)}°`;
 
-                // Обновление результатов в одной строке
-                document.getElementById("results").textContent = `${polarizationText}, ${elevationAngleText}, ${convectorAngleText}`;
+                // Истинный азимут
+                const TrueAzimuth = Math.atan2(Math.sin((satLon - lon1) * rad) * Math.cos(satLat * rad), Math.cos(lat1 * rad) * Math.sin(satLat * rad) - Math.sin(lat1 * rad) * Math.cos(satLat * rad) * Math.cos((satLon - lon1) * rad)) ;
+                const TrueAzimuthD = (toDegrees(TrueAzimuth) + 360) % 360;
+                const TrueAzimuthText = `Истинный азимут: ${TrueAzimuthD.toFixed(2)}°`;
+
+                // Магнитный азимут
+                const geomagData = geomag.field(lat1, lon1);
+                const magneticDeclination = geomagData.declination;
+                const MagneticAzimuth = (TrueAzimuthD - magneticDeclination + 360) % 360;
+                const MagneticAzimuthText = `Магнитный азимут: ${MagneticAzimuth.toFixed(2)}°`;
+
+                // Обновление результатов на странице
+                const resultsContainer = document.getElementById('results');
+                resultsContainer.innerHTML = `
+                    <div class="result-item">${polarizationText}</div>
+                    <div class="result-item">${elevationAngleText}</div>
+                    <div class="result-item">${convectorAngleText}</div>
+                    <div class="result-item">${TrueAzimuthText}</div>
+                    <div class="result-item">${MagneticAzimuthText}</div>
+                `;
             } else {
                 alert('Точки для расчета не выбраны.');
             }
