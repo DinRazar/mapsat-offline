@@ -27,17 +27,17 @@
     <script src="https://cdn.jsdelivr.net/npm/leaflet.geodesic"></script>
     <script>
         // онлайн версия
-        // const map = L.map('map').setView([55.755811, 37.617617], 11);
-        // L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        //     maxZoom: 19,                                                                           
-        // }).addTo(map);
+        const map = L.map('map').setView([55.755811, 37.617617], 11);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,                                                                           
+        }).addTo(map);
         
         map.attributionControl.setPrefix(false);
         
-        // оффлайн версия
+        // // оффлайн версия
         // var map = L.map('map').setView([55.755811, 37.617617], 11);
         // map.attributionControl.setPrefix(false)
-        // Добавление слоя тайлов
+        // // Добавление слоя тайлов
         // L.tileLayer('data/Tiles/{z}/{x}/{y}.png', {
         //     maxZoom: 13,                                                                                
         //     minZoom: 3,

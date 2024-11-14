@@ -4,13 +4,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dropdown and Leaflet Map</title>
+    <title>Mapsat-offline</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <link rel="stylesheet" href="./style.css">
     <script src="./geomag-master/dist/geomag.min.js"></script>
     <link rel="stylesheet" href="./libs/dist/leaflet.css">
     <link rel="stylesheet" href="./libs/dist/leaflet-measure.css">
-    <style>
+    <!-- <style>
         #results {
             margin-top: 10px;
             font-weight: bold;
@@ -22,14 +22,14 @@
         .result-item {
             margin-right: 20px;
         }
-    </style>
+    </style> -->
 </head>
 
 <body>
     <div id="controls">
         <select id="dataDropdown"></select>
         <button id="addPointButton" disabled>Добавить точку</button>
-        <div id="heightInputContainer" style="display: none;">
+        <div id="heightInputContainer" >
             <label for="heightInput">Введите высоту на которой расположен дрон в метрах</label>
             <input type="number" id="heightInput" placeholder="Высота в метрах" disabled>
             <button id="confirmHeightButton" disabled>Подтвердить</button>
@@ -46,7 +46,6 @@
         //     maxZoom: 19,
         // }).addTo(map);
 
-        // map.attributionControl.setPrefix(false)
 
         // оффлайн версия
         var map = L.map('map').setView([55.755811, 37.617617], 11);
@@ -60,11 +59,14 @@
             attribution: 'Тестовая карта'
         }).addTo(map);
 
-        let lastMarker;
-        let markerFromDB;
-        let geodesic;
-        let thirdMarker;
-        let thirdGeodesic;
+        map.attributionControl.setPrefix(false)
+
+
+        let lastMarker; // переменная для маркера, создающегося по клику
+        let markerFromDB; // переменная для маркера из базы данных
+        let geodesic; // переменная для геодезической линии между lastMarker и markerFromDB
+        let thirdMarker; // переменная для маркера дрона
+        let thirdGeodesic; // переменная для геодезической линии между lastMarker и thirdMarker
 
         var info = L.control();
         info.onAdd = function (map) {
@@ -97,7 +99,7 @@
                 data.forEach(item => {
                     const option = document.createElement('option');
                     option.value = item.id;
-                    option.textContent = item.name;
+                    option.textContent = item.Names;
                     option.dataset.latitude = item.latitude;
                     option.dataset.longitude = item.longitude;
                     dropdown.appendChild(option);
@@ -134,6 +136,17 @@
                 // Выполнение расчетов
                 performCalculations();
             }
+            if (thirdMarker) {
+                if (thirdGeodesic) {
+                    map.removeLayer(thirdGeodesic);
+                }
+                thirdGeodesic = L.geodesic([lastMarker.getLatLng(), thirdMarker.getLatLng()], {
+                    weight: 3,
+                    opacity: 1,
+                    color: 'red',
+                    steps: 50
+                }).addTo(map);
+            }
         }
 
         const thirdMarkerIcon = L.icon({
@@ -142,41 +155,50 @@
             iconAnchor: [12.5, 12.5],
         });
 
-        document.getElementById('addPointButton').addEventListener('click', function () {
+        // Обработчик нажатия на кнопку добавления точки
+        document.getElementById('addPointButton').addEventListener('click', function() {
             if (geodesic) {
                 const newPointLatLng = lastMarker.getLatLng();
 
+                // Проверяем, существует ли третий маркер
                 if (thirdMarker) {
+                    // Если третий маркер существует, удаляем его
                     map.removeLayer(thirdMarker);
-                    thirdMarker = null;
+                    thirdMarker = null; // Устанавливаем thirdMarker в null
                     if (thirdGeodesic) {
                         map.removeLayer(thirdGeodesic);
-                        thirdGeodesic = null;
+                        thirdGeodesic = null; // Устанавливаем thirdGeodesic в null
                     }
+                    // Скрываем поле ввода и очищаем его
                     const heightInput = document.getElementById('heightInput');
                     heightInput.style.display = 'none';
                     heightInput.disabled = true;
                     heightInput.value = '';
 
+                    // Скрываем кнопку подтверждения
                     const confirmHeightButton = document.getElementById('confirmHeightButton');
                     confirmHeightButton.style.display = 'none';
                     confirmHeightButton.disabled = true;
                 } else {
+                    // Если третьего маркера нет, добавляем его
                     thirdMarker = L.marker(newPointLatLng, {
-                        icon: thirdMarkerIcon,
+                        icon: thirdMarkerIcon, // Применяем новую иконку
                         draggable: true
                     }).addTo(map);
-                    thirdMarker.on('drag', updateGeodesicAndCalculations);
+                    thirdMarker.on('drag', updateGeodesicAndCalculations); // Обновляем геодезическую линию при перемещении третьего маркера
 
+                    // Показ поля ввода высоты и его активация
                     const heightInput = document.getElementById('heightInput');
                     heightInput.style.display = 'block';
                     heightInput.disabled = false;
 
+                    // Показ кнопки подтверждения и её активация
                     const confirmHeightButton = document.getElementById('confirmHeightButton');
                     confirmHeightButton.style.display = 'block';
                     confirmHeightButton.disabled = false;
                 }
 
+                // Обновляем геодезическую линию после добавления или удаления третьего маркера
                 updateGeodesicAndCalculations();
             } else {
                 alert('Невозможно добавить точку, так как геодезическая линия не существует.');
@@ -193,6 +215,8 @@
         function calculateVisibilityDistance(antennaHeight, transmitterHeight) {
             return 3.57 * (Math.sqrt(antennaHeight) + Math.sqrt(transmitterHeight));
         };
+
+        // подсчёт поляризации, угла места, угла поворота коныектора, истинного и магнитного азимутов
 
         function performCalculations() {
             if (lastMarker && markerFromDB) {
@@ -240,7 +264,8 @@
             } else {
                 alert('Точки для расчета не выбраны.');
             }
-        }
+        };
+
     </script>
 </body>
 
