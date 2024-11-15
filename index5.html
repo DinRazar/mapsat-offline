@@ -5,25 +5,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mapsat-offline</title>
-    <script src="./geomag-master/dist/geomag.min.js"></script>
-    <script src="./libs/dist/leaflet.js"></script>
+    <script src="./geomag-master/dist/geomag.min.js"></script>         <!-- Библиотека для геомагнитных рассчётов -->
+    <script src="./libs/dist/leaflet.js"></script>                     <!-- Библиотека leaflet для оффлайн расчётов -->
     <script src="./libs/dist/leaflet-measure.js"></script>
     <link rel="stylesheet" href="./libs/dist/leaflet.css">
     <link rel="stylesheet" href="./libs/dist/leaflet-measure.css">
     <link rel="stylesheet" href="./style.css">
-    <!-- <style>
-        #results {
-            margin-top: 10px;
-            font-weight: bold;
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: space-around;
-        }
-
-        .result-item {
-            margin-right: 20px;
-        }
-    </style> -->
 </head>
 
 <body>
@@ -38,20 +25,19 @@
         <div id="results"></div> <!-- Контейнер для результатов -->
     </div>
     <div id="map"></div>
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/leaflet.geodesic"></script>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>           <!-- Библиотека leaflet для онлайн расчётов -->
+    <script src="https://cdn.jsdelivr.net/npm/leaflet.geodesic"></script>       <!-- Библиотека для геодезических расчётов -->
     <script>
-        // // онлайн версия
-        // const map = L.map('map').setView([55.755811, 37.617617], 11);
+
+        // // Онлайн версия
+        // var map = L.map('map').setView([55.755811, 37.617617], 11);
         // L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         //     maxZoom: 19,
         // }).addTo(map);
 
 
-        // оффлайн версия
+        // Оффлайн версия
         var map = L.map('map').setView([55.755811, 37.617617], 11);
-        map.attributionControl.setPrefix(false)
-       // Добавление слоя тайлов
         L.tileLayer('data/Tiles/{z}/{x}/{y}.png', {
             maxZoom: 13,                                                                          
             minZoom: 3,
@@ -60,6 +46,7 @@
             attribution: 'Тестовая карта'
         }).addTo(map);
 
+        // отключение флага, что?
         map.attributionControl.setPrefix(false)
 
 
@@ -69,17 +56,12 @@
         let thirdMarker; // переменная для маркера дрона
         let thirdGeodesic; // переменная для геодезической линии между lastMarker и thirdMarker
 
-        var info = L.control();
-        info.onAdd = function (map) {
-            this._div = L.DomUtil.create('div', 'info');
-            return this._div;
-        };
-        info.addTo(map);
-
+        // обработчик нажатия по карте
         map.on('click', function (e) {
             const lat = e.latlng.lat;
             const lng = e.latlng.lng;
 
+            // создание маркера 
             if (lastMarker) {
                 map.removeLayer(lastMarker);
             }
@@ -93,6 +75,7 @@
             document.getElementById('addPointButton').disabled = false;
         });
 
+        // обработчик запросов на сервер
         fetch('http://localhost:3000/data')
             .then(response => response.json())
             .then(data => {
@@ -111,6 +94,7 @@
                     const latitude = selectedOption.dataset.latitude;
                     const longitude = selectedOption.dataset.longitude;
 
+                    // создание маркера по координатам с сервера
                     if (markerFromDB) {
                         map.removeLayer(markerFromDB);
                     }
@@ -120,14 +104,15 @@
                 });
             })
             .catch(error => console.error('Ошибка загрузки данных:', error));
-
+        
+        // функция для создания геодезических линий
         function updateGeodesicAndCalculations() {
             if (geodesic) {
                 map.removeLayer(geodesic);
             }
 
             if (lastMarker && markerFromDB) {
-                geodesic = L.geodesic([lastMarker.getLatLng(), markerFromDB.getLatLng()], {
+                geodesic = L.geodesic([lastMarker.getLatLng(), markerFromDB.getLatLng()], {         // между точкой (по клику) и из БД
                     weight: 3,
                     opacity: 1,
                     color: 'blue',
@@ -141,7 +126,7 @@
                 if (thirdGeodesic) {
                     map.removeLayer(thirdGeodesic);
                 }
-                thirdGeodesic = L.geodesic([lastMarker.getLatLng(), thirdMarker.getLatLng()], {
+                thirdGeodesic = L.geodesic([lastMarker.getLatLng(), thirdMarker.getLatLng()], {     // между точкой (по клику) и созданной при помощи кнопки
                     weight: 3,
                     opacity: 1,
                     color: 'red',
@@ -150,6 +135,7 @@
             }
         }
 
+        // настройка визувльного стиля маркера
         const thirdMarkerIcon = L.icon({
             iconUrl: 'data/dron.png',
             iconSize: [25, 25],
@@ -208,11 +194,15 @@
 
         document.getElementById('confirmHeightButton').addEventListener('click', function () {
             const height = parseFloat(document.getElementById('heightInput').value);
-            const antennaHeight = 10;
+
+            // высота антены, в будущем это как-то должно поменяться
+            const antennaHeight = 10;    
+
             const visibilityDistance = calculateVisibilityDistance(antennaHeight, height);
             alert(`Расстояние прямой видимости: ${visibilityDistance.toFixed(2)} км`);
         });
 
+        // прямая видимость 
         function calculateVisibilityDistance(antennaHeight, transmitterHeight) {
             return 3.57 * (Math.sqrt(antennaHeight) + Math.sqrt(transmitterHeight));
         };
