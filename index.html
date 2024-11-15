@@ -1,4 +1,4 @@
-<!-- Офлайн индекс, есть три тчочк, геодезическая линия и просто линия -->
+<!-- Офлайн индекс, есть три тчочк, геодезическая линия и просто линия и куча расчётов -->
 
 <!DOCTYPE html>
 <html lang="en">
@@ -6,25 +6,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dropdown and Leaflet Map</title>
-    <link rel="stylesheet" href="./style.css">
-    <script src="./libs/dist/leaflet.js"></script>
+    <title>Mapsat-offline</title>
+    <script src="./geomag-master/dist/geomag.min.js"></script>         <!-- Библиотека для геомагнитных рассчётов -->
+    <script src="./libs/dist/leaflet.js"></script>                     <!-- Библиотека leaflet для оффлайн расчётов -->
     <script src="./libs/dist/leaflet-measure.js"></script>
     <link rel="stylesheet" href="./libs/dist/leaflet.css">
     <link rel="stylesheet" href="./libs/dist/leaflet-measure.css">
+    <link rel="stylesheet" href="./style.css">
 </head>
 
 <body>
-    <select id="dataDropdown"></select>
-    <button id="addPointButton" disabled>Расчёт точки</button>
-    <div id="heightInputContainer">
-        <label for="heightInput">Введите высоту на которой расположен дрон в метрах</label>
-        <input type="number" id="heightInput" placeholder="Высота в метрах" disabled>
-        <button id="confirmHeightButton" disabled>Подтвердить</button>
+    <div id="controls">
+        <select id="dataDropdown"></select>
+        <button id="addPointButton" disabled>Добавить точку</button>
+        <div id="heightInputContainer" >
+            <label for="heightInput">Введите высоту на которой расположен дрон в метрах</label>
+            <input type="number" id="heightInput" placeholder="Высота в метрах" disabled>
+            <button id="confirmHeightButton" disabled>Подтвердить</button>
+        </div>
+        <div id="results"></div> <!-- Контейнер для результатов -->
     </div>
     <div id="map"></div>
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/leaflet.geodesic"></script>
+    <script src="https://cdn.jsdelivr.net/npm/leaflet.geodesic"></script>       <!-- Библиотека для геодезических расчётов -->
     <script src="./main.js"></script>
 </body>
 
