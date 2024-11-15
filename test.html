@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Многоуровневый выпадающий список с ID</title>
+</head>
+<body>
+    <h1>Выберите значения</h1>
+    <select id="level1">
+        <option value="">Выберите уровень 1</option>
+    </select>
+    <select id="level2" disabled>
+        <option value="">Выберите уровень 2</option>
+    </select>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Получение данных из сервера
+            fetch('/api/data')
+                .then(response => response.json())
+                .then(data => {
+                    // Заполнение первого выпадающего списка
+                    const level1Select = document.getElementById('level1');
+                    const uniqueLevel1 = [...new Set(data.map(item => item['Level 1']))]; // Получаем уникальные значения для уровня 1
+
+                    uniqueLevel1.forEach(level1 => {
+                        const option = document.createElement('option');
+                        option.value = level1; // Значение для первого уровня
+                        option.textContent = level1; // Отображаемое значение
+                        level1Select.appendChild(option);
+                    });
+                });
+
+            // Обработчик для первого уровня
+            document.getElementById('level1').addEventListener('change', function() {
+                const selectedValue = this.value;
+                const level2Select = document.getElementById('level2');
+                level2Select.innerHTML = '<option value="">Выберите уровень 2</option>'; // Сброс уровня 2
+                level2Select.disabled = true; // Деактивируем уровень 2
+
+                if (selectedValue) {
+                    // Получение данных из сервера
+                    fetch('/api/data')
+                        .then(response => response.json())
+                        .then(data => {
+                            const filteredData = data.filter(item => item['Level 1'] === selectedValue);
+                            const uniqueIDs = [...new Set(filteredData.map(item => item.ID))]; // Получаем уникальные ID
+
+                            uniqueIDs.forEach(id => {
+                                const optionsForID = filteredData.filter(item => item.ID === id);
+                                optionsForID.forEach(item => {
+                                    const option = document.createElement('option');
+                                    option.value = item['Level 2']; // Значение для второго уровня
+                                    option.textContent = item['Level 2']; // Отображаемое значение
+                                    level2Select.appendChild(option);
+                                });
+                            });
+                            level2Select.disabled = false; // Активируем уровень 2
+                        });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
