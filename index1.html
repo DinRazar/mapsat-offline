@@ -7,9 +7,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mapsat-offline</title>
-    <script src="./geomag-master/dist/geomag.min.js"></script>         <!-- Библиотека для геомагнитных рассчётов -->
+    <script src="./geomag-master/dist/geomag.min.js"></script>
+    <!-- Библиотека для геомагнитных рассчётов -->
     <link rel="stylesheet" href="./libs/dist/leaflet.css">
-    <link rel="stylesheet" href="./libs/dist/leaflet-measure.css"> 
+    <link rel="stylesheet" href="./libs/dist/leaflet-measure.css">
     <link rel="stylesheet" href="./style.css">
 </head>
 
@@ -17,17 +18,20 @@
     <div id="controls">
         <select id="dataDropdown"></select>
         <button id="addPointButton" disabled>Добавить точку</button>
-        <div id="heightInputContainer" >
+        <div id="heightInputContainer">
             <label for="heightInput">Введите высоту на которой расположен дрон в метрах</label>
             <input type="number" id="heightInput" placeholder="Высота в метрах" disabled>
             <button id="confirmHeightButton" disabled>Подтвердить</button>
         </div>
-        <div id="results"></div> <!-- Контейнер для результатов -->
+        <div id="results"></div>
+        <!-- Контейнер для результатов -->
     </div>
     <div id="map"></div>
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>           <!-- Библиотека leaflet для онлайн расчётов -->
-    <script src="https://cdn.jsdelivr.net/npm/leaflet.geodesic"></script>       <!-- Библиотека для геодезических расчётов -->
-    <script src="./main.js"></script>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <!-- Библиотека leaflet для онлайн расчётов -->
+    <script src="https://cdn.jsdelivr.net/npm/leaflet.geodesic"></script>
+    <!-- Библиотека для геодезических расчётов -->
+    <script src="./main1.js"></script>
 </body>
 
 </html>
